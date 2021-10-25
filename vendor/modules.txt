@@ -1,0 +1,2 @@
+# github.com/spiral/goridge/v3 v3.2.3
+## explicit; go 1.17
