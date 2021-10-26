@@ -1,3 +1,9 @@
 .idea
-*.log
 .env
+*.log
+*.exe
+*.exe~
+.docker/
+.run/
+logs/
+local/

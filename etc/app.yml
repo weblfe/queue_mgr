@@ -1,0 +1,41 @@
+app:
+  name: "queue_mgr"
+  version: 0.1.0
+
+# 数据库配置
+database:
+
+  default:
+    host: "127.0.0.1"
+    port: 3306
+    name: "bongolive"
+    user: "root"
+    password: "root"
+    default: true
+    options: "charset=utf8mb4&parseTime=True&loc=Local"
+
+  data:
+    host: "127.0.0.1"
+    port: 3306
+    name: "app_data"
+    user: "root"
+    password: "root"
+    options: "charset=utf8mb4&parseTime=True&loc=Local"
+
+# redis 配置
+redis:
+  default:
+    host: "127.0.0.1"
+    port: 6379
+    auth: ""
+    db: 0
+
+# 服务配置
+services:
+  userService:
+    name: UserService
+    methods:
+      - Login.UserLogin
+    entrypoints:
+      - http://8.135.105.14/appapi|100
+      - http://8.135.105.14/appapi|100

@@ -1,0 +1,10 @@
+.idea/
+.git/
+.env
+readme.md
+*.log
+*.exe
+.docker/
+.run/
+logs/
+local/
