@@ -21,7 +21,6 @@ func CreatePromWare() fiber.Handler {
 		handlerServ = prometheus.GetHttpHandler()
 	)
 	return func(ctx *fiber.Ctx) error {
-		//ctx.Request()
 		var (
 			responseWriter = NewHttpHandler(ctx)
 			request, err   = createHttpRequest(ctx)

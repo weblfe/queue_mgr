@@ -1,0 +1,391 @@
+basePath: /queue_mgr
+definitions:
+  entity.JsonData:
+    properties:
+      code:
+        type: integer
+      info:
+        items:
+          $ref: '#/definitions/entity.KvMap'
+        type: array
+      msg:
+        type: string
+    type: object
+  entity.JsonResponse:
+    properties:
+      data:
+        $ref: '#/definitions/entity.JsonData'
+        description: Data
+      ret:
+        description: httpCode
+        type: integer
+    type: object
+  entity.KvMap:
+    additionalProperties: true
+    type: object
+host: localhost:81
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: app队列管理服务发服务
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: QueueMgrServ
+  version: "1.0"
+paths:
+  /consumer/create:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: register live app info
+      parameters:
+      - description: access jwt token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: app name
+        in: formData
+        name: app_name
+        required: true
+        type: string
+      - description: app logo url
+        in: formData
+        name: app_logo_url
+        type: string
+      - description: callback url
+        in: formData
+        name: callback_url
+        type: string
+      - description: sync lives api
+        in: formData
+        name: sync_url
+        type: string
+      - description: proxy url addr
+        in: formData
+        name: proxy_url
+        type: string
+      - default: 1
+        description: sync type ( 1:post_sync,2:interval_sync )
+        enum:
+        - 1
+        - 2
+        in: formData
+        name: sync_type
+        type: integer
+      - description: 'interval sync duration (unit: second)'
+        enum:
+        - 0
+        - 10
+        - 15
+        - 30
+        - 60
+        - 180
+        in: formData
+        name: interval_duration
+        type: integer
+      - default: 0
+        description: interval fail retry times
+        enum:
+        - 0
+        - 3
+        - 5
+        - 10
+        in: formData
+        name: interval_fail_times
+        type: integer
+      - default: '{"pro_im_url":"","test_im_url":"","dev_im_url":""}'
+        description: 'extras data '
+        in: formData
+        name: extras
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+      summary: 创建队列消费器
+      tags:
+      - QueueMgrServ
+  /routers:
+    get:
+      description: List Service Api Routers
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.KvMap'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entity.KvMap'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entity.KvMap'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entity.KvMap'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/entity.KvMap'
+      summary: 罗列服务接口列表
+      tags:
+      - AppCdnServ
+  /state:
+    get:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: query queue consumer state
+      parameters:
+      - description: access jwt token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: app id
+        in: formData
+        name: app_id
+        required: true
+        type: string
+      - description: app name
+        in: formData
+        name: app_name
+        type: string
+      - description: app logo url
+        in: formData
+        name: app_logo_url
+        type: string
+      - description: callback url
+        in: formData
+        name: callback_url
+        type: string
+      - description: proxy url addr
+        in: formData
+        name: proxy_url
+        type: string
+      - description: sync lives api
+        in: formData
+        name: sync_url
+        type: string
+      - description: sync type ( 1:post_sync,2:interval_sync )
+        enum:
+        - 1
+        - 2
+        in: formData
+        name: sync_type
+        type: integer
+      - description: 'interval sync duration (unit: second)'
+        enum:
+        - 10
+        - 15
+        - 30
+        - 60
+        - 180
+        in: formData
+        name: interval_duration
+        type: integer
+      - description: interval fail retry times
+        enum:
+        - 0
+        - 3
+        - 5
+        - 10
+        in: formData
+        name: interval_fail_times
+        type: integer
+      - default: '{"pro_im_url":"","test_im_url":"","dev_im_url":""}'
+        description: extras data
+        in: formData
+        name: extras
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+      summary: 查询队列消费器状态
+      tags:
+      - QueueMgrServ
+  /state/update:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: change queue consumer state
+      parameters:
+      - description: access jwt token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: app id
+        in: formData
+        name: app_id
+        required: true
+        type: string
+      - description: app name
+        in: formData
+        name: app_name
+        type: string
+      - description: app logo url
+        in: formData
+        name: app_logo_url
+        type: string
+      - description: callback url
+        in: formData
+        name: callback_url
+        type: string
+      - description: proxy url addr
+        in: formData
+        name: proxy_url
+        type: string
+      - description: sync lives api
+        in: formData
+        name: sync_url
+        type: string
+      - description: sync type ( 1:post_sync,2:interval_sync )
+        enum:
+        - 1
+        - 2
+        in: formData
+        name: sync_type
+        type: integer
+      - description: 'interval sync duration (unit: second)'
+        enum:
+        - 10
+        - 15
+        - 30
+        - 60
+        - 180
+        in: formData
+        name: interval_duration
+        type: integer
+      - description: interval fail retry times
+        enum:
+        - 0
+        - 3
+        - 5
+        - 10
+        in: formData
+        name: interval_fail_times
+        type: integer
+      - default: '{"pro_im_url":"","test_im_url":"","dev_im_url":""}'
+        description: extras data
+        in: formData
+        name: extras
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+      summary: 控制队列消费器状态
+      tags:
+      - QueueMgrServ
+schemes:
+- http
+- https
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+  BasicAuth:
+    type: basic
+  OAuth2AccessCode:
+    authorizationUrl: https://example.com/oauth/authorize
+    flow: accessCode
+    scopes:
+      admin: ' Grants read and write access to administrative information'
+    tokenUrl: https://example.com/oauth/token
+    type: oauth2
+  OAuth2Application:
+    flow: application
+    scopes:
+      admin: ' Grants read and write access to administrative information'
+      write: ' Grants write access'
+    tokenUrl: https://example.com/oauth/token
+    type: oauth2
+  OAuth2Implicit:
+    authorizationUrl: https://example.com/oauth/authorize
+    flow: implicit
+    scopes:
+      admin: ' Grants read and write access to administrative information'
+      write: ' Grants write access'
+    type: oauth2
+  OAuth2Password:
+    flow: password
+    scopes:
+      admin: ' Grants read and write access to administrative information'
+      read: ' Grants read access'
+      write: ' Grants write access'
+    tokenUrl: https://example.com/oauth/token
+    type: oauth2
+swagger: "2.0"
+tags:
+- description: 'app队列管理服务发服务接口集合 服务路由前缀: /queue_mgr/, jwt scope: queueMgrServ'
+  name: QueueMgrServ
+x-extension-openapi:
+  name: QueueMgrServ

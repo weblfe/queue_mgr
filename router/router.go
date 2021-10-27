@@ -6,10 +6,11 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/monitor"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
-	_ "github.com/weblfe/queue_mgr/docs"
+	"github.com/weblfe/queue_mgr/docs"
 	"github.com/weblfe/queue_mgr/middlewares"
 	"github.com/weblfe/queue_mgr/transport/http"
 	"github.com/weblfe/queue_mgr/utils"
+	"strings"
 	_ "strings"
 )
 
@@ -31,10 +32,12 @@ func Http(app *fiber.App) {
 
 	// requestID
 	app.Use(requestid.New(requestid.Config{Header: "X-Request-ID"}))
-	//docs.SwaggerInfo.Host = strings.TrimPrefix(utils.GetEnvVal("APP_URL", docs.SwaggerInfo.Host), "http://")
+	docs.SwaggerInfo.Host = strings.TrimPrefix(utils.GetEnvVal("APP_URL", docs.SwaggerInfo.Host), docs.GetDefaultSchema())
 	// 数据监控
 	app.Get("/", monitorWare)
 	app.Get("/queue_mgr", monitorWare)
+	app.Get("/metrics", promWare)
+
 	var router = app.Group("/queue_mgr")
 	// expose prometheus metrics 接口
 	router.All("/metrics",promWare)
