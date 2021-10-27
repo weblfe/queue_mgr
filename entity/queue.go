@@ -1,6 +1,6 @@
 package entity
 
-import "github.com/weblfe/httpproxy/utils"
+import "github.com/weblfe/queue_mgr/utils"
 
 type (
 	// QueueOptions 队列选项
