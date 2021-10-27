@@ -23,7 +23,7 @@ FROM weblinuxgame/alpine-go:v0.1.0
 
 WORKDIR /app
 
-COPY --from=builder /app/serv /app/bin/queue_mgr
+COPY --from=builder /app/serv /app/bin/queueMgrServ
 # 默认配置
 COPY --from=builder /build/go/etc/app.yml /app/config/app.yml
 
@@ -31,4 +31,4 @@ COPY --from=builder /build/go/etc/app.yml /app/config/app.yml
 EXPOSE 80 8080
 VOLUME /app/config
 
-CMD ["/app/bin/queue_mgr","-c","/app/config/app.yml"]
+CMD ["/app/bin/queueMgrServ","-c","/app/config/app.yml"]
