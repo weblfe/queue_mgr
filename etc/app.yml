@@ -1,5 +1,5 @@
 app:
-  name: "queue_mgr"
+  name: "queueMgr"
   version: 0.1.0
 
 # 数据库配置

@@ -1,10 +1,13 @@
 package plugins
 
 import (
+	"errors"
 	"github.com/weblfe/queue_mgr/plugins/libs"
 	"github.com/yuin/gopher-lua"
+	"io"
 	"runtime"
-	"sync"
+		"sort"
+		"sync"
 	"time"
 )
 
@@ -14,13 +17,14 @@ type (
 	LuaState struct {
 		lua.LState
 	}
+
 	luaPluginImpl struct {
 		lvm         *LuaState
 		constructor *sync.Once
 		bootAt      time.Time
-		extLibs     []*LuaRegistryFunction
 		loader      PluginBootLoader
 		options     *PluginOptions
+		extLibs     []*LuaRegistryFunction
 	}
 
 	PluginOptions struct {
@@ -124,7 +128,7 @@ func (plugin *luaPluginImpl) loads() {
 		return
 	}
 	var (
-		libs  []LuaRegistryFunction
+		libRegistries  []LuaRegistryFunction
 		cache = make(map[string]bool)
 	)
 	for _, lib := range plugin.extLibs {
@@ -134,11 +138,11 @@ func (plugin *luaPluginImpl) loads() {
 		if _, ok := cache[lib.LName]; ok {
 			continue
 		}
-		libs = append(libs, *lib)
+			libRegistries = append(libRegistries, *lib)
 	}
 
-	if len(libs) > 0 {
-		plugin.extend(vm, libs)
+	if len(libRegistries) > 0 {
+		plugin.extend(vm, libRegistries)
 	}
 }
 
@@ -162,6 +166,48 @@ func (plugin *luaPluginImpl) GetLState() *lua.LState {
 	return state
 }
 
+func (plugin *luaPluginImpl) Eval(data []byte) error {
+	return plugin.GetVM().DoString(string(data))
+}
+
+func (plugin *luaPluginImpl) EvalExpr(luaExpr string) error {
+	return plugin.GetVM().DoString(luaExpr)
+}
+
+func (plugin *luaPluginImpl) LoadFile(file string) (*lua.LFunction, error) {
+	return plugin.GetVM().LoadFile(file)
+}
+
+func (plugin *luaPluginImpl) Libs() []string {
+	var (
+		libArr []string
+		global = plugin.GetLState().G
+	)
+	if global == nil || global.Global == nil {
+		return libArr
+	}
+	global.Global.ForEach(func(value lua.LValue, value2 lua.LValue) {
+		if value.Type() == lua.LTNil || value2.Type() == lua.LTNil {
+			return
+		}
+		libArr = append(libArr, value.String())
+	})
+	if len(libArr) >0 {
+			sort.Strings(libArr)
+	}
+	return libArr
+}
+
+func (plugin *luaPluginImpl) LoadByIo(reader io.ReadCloser, name string) (*lua.LFunction, error) {
+	if reader == nil {
+		return nil, errors.New("reader nil")
+	}
+	defer func() {
+		_ = reader.Close()
+	}()
+	return plugin.GetVM().Load(reader, name)
+}
+
 func (plugin *luaPluginImpl) destroy() {
 	runtime.SetFinalizer(plugin, nil)
 	if plugin.lvm != nil {
@@ -172,7 +218,7 @@ func (plugin *luaPluginImpl) destroy() {
 	plugin.constructor = nil
 }
 
-func CreateLoader() (*PluginOptions, error) {
+func CreateExtendsLoader() (*PluginOptions, error) {
 	var opts = &PluginOptions{
 		Extends: []*LuaRegistryFunction{
 			{
