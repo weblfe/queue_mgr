@@ -20,7 +20,7 @@ func Http(app *fiber.App) {
 	var (
 		monitorWare = monitor.New()
 		routerApi   = http.NewRouterApi(app)
-		_     = middlewares.NewJwtWare()
+		promWare     = middlewares.CreatePromWare()
 	)
 
 	// 跨域
@@ -34,8 +34,10 @@ func Http(app *fiber.App) {
 	//docs.SwaggerInfo.Host = strings.TrimPrefix(utils.GetEnvVal("APP_URL", docs.SwaggerInfo.Host), "http://")
 	// 数据监控
 	app.Get("/", monitorWare)
-	app.Get("/app_cdn", monitorWare)
+	app.Get("/queue_mgr", monitorWare)
 	var router = app.Group("/queue_mgr")
+	// expose prometheus metrics 接口
+	router.All("/metrics",promWare)
 	// 数据监控
 	router.Get("/dashboard", monitorWare)
 	// swag
