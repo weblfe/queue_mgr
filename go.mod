@@ -18,8 +18,11 @@ require (
 	github.com/spf13/viper v1.9.0
 	github.com/streadway/amqp v1.0.0
 	github.com/subosito/gotenv v1.2.0
+	github.com/swaggo/swag v1.7.3
 	github.com/syndtr/goleveldb v1.0.0
+	github.com/valyala/fasthttp v1.30.0
 	github.com/weblfe/drivers v1.0.1
+	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9
 	google.golang.org/api v0.59.0
 	xorm.io/builder v0.3.9
 	xorm.io/xorm v1.2.5
@@ -68,13 +71,9 @@ require (
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/spiral/goridge/v3 v3.2.3 // indirect
 	github.com/swaggo/files v0.0.0-20210815190702-a29dd2bc99b2 // indirect
-	github.com/swaggo/swag v1.7.3 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fasthttp v1.30.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
-	github.com/yookoala/gofast v0.6.0 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d // indirect
 	golang.org/x/oauth2 v0.0.0-20211005180243-6b3c2da341f1 // indirect
