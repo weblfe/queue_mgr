@@ -22,9 +22,83 @@
     "host": "localhost:81",
     "basePath": "/queue_mgr",
     "paths": {
+        "/bind": {
+            "post": {
+                "description": "bind queue consumer",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "QueueMgrServ"
+                ],
+                "summary": "给队列绑定消费协程",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "access jwt token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "consumer/消费器名",
+                        "name": "consumer",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "queue/队列名",
+                        "name": "queue",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "properties/绑定消费器相关参数(json)",
+                        "name": "properties",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.JsonResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/entity.JsonResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/entity.JsonResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/entity.JsonResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/entity.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/consumer/create": {
             "post": {
-                "description": "register live app info",
+                "description": "create queue consumer",
                 "consumes": [
                     "application/x-www-form-urlencoded"
                 ],
@@ -45,78 +119,221 @@
                     },
                     {
                         "type": "string",
-                        "description": "app name",
-                        "name": "app_name",
+                        "description": "consumer/消费器名",
+                        "name": "consumer",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "\"FastCGI\"",
+                            "\"Native\"",
+                            "\"Shell\"",
+                            "\"Api\"",
+                            "\"Grpc\"",
+                            "\"Proxy\"",
+                            "\"Plugins\""
+                        ],
+                        "type": "string",
+                        "description": "type/消费器类型",
+                        "name": "type",
                         "in": "formData",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "app logo url",
-                        "name": "app_logo_url",
+                        "description": "properties/消费器相关参数(json)",
+                        "name": "properties",
                         "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.JsonResponse"
+                        }
                     },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/entity.JsonResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/entity.JsonResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/entity.JsonResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/entity.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/consumers": {
+            "get": {
+                "description": "query queue consumer lists",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "QueueMgrServ"
+                ],
+                "summary": "罗列消费队列信息",
+                "parameters": [
                     {
                         "type": "string",
-                        "description": "callback url",
-                        "name": "callback_url",
-                        "in": "formData"
+                        "description": "access jwt token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "sync lives api",
-                        "name": "sync_url",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "proxy url addr",
-                        "name": "proxy_url",
-                        "in": "formData"
-                    },
-                    {
-                        "enum": [
-                            1,
-                            2
-                        ],
                         "type": "integer",
                         "default": 1,
-                        "description": "sync type ( 1:post_sync,2:interval_sync )",
-                        "name": "sync_type",
+                        "description": "page/页码",
+                        "name": "page",
                         "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "count/分页量",
+                        "name": "count",
+                        "in": "query"
                     },
                     {
                         "enum": [
                             0,
-                            10,
-                            15,
-                            30,
-                            60,
-                            180
+                            1,
+                            2,
+                            3
                         ],
                         "type": "integer",
-                        "description": "interval sync duration (unit: second)",
-                        "name": "interval_duration",
-                        "in": "formData"
-                    },
-                    {
-                        "enum": [
-                            0,
-                            3,
-                            5,
-                            10
-                        ],
-                        "type": "integer",
-                        "default": 0,
-                        "description": "interval fail retry times",
-                        "name": "interval_fail_times",
-                        "in": "formData"
+                        "description": "state/消费进程状态",
+                        "name": "state",
+                        "in": "query"
                     },
                     {
                         "type": "string",
-                        "default": "{\"pro_im_url\":\"\",\"test_im_url\":\"\",\"dev_im_url\":\"\"}",
-                        "description": "extras data ",
-                        "name": "extras",
+                        "default": "\"created_at:desc\"",
+                        "description": "sort/排序参数",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "name/限定队列名(模糊匹配eg: test*)",
+                        "name": "queue",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.JsonResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/entity.JsonResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/entity.JsonResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/entity.JsonResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/entity.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/metrics": {
+            "get": {
+                "description": "prometheus Metrics",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "QueueMgrServ"
+                ],
+                "summary": "export prometheus metrics"
+            }
+        },
+        "/queue/create": {
+            "post": {
+                "description": "add queue  info",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "QueueMgrServ"
+                ],
+                "summary": "创建可消费队列信息",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "access jwt token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "queue/队列名",
+                        "name": "queue",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "\"AMQP\"",
+                            "\"MQTT\"",
+                            "\"HTTP\"",
+                            "\"WS\"",
+                            "\"PLUGINS\""
+                        ],
+                        "type": "string",
+                        "description": "queue/队列链接驱动器类型",
+                        "name": "driver",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "properties/可消费队列相关参数(json)",
+                        "name": "properties",
                         "in": "formData"
                     }
                 ],
@@ -161,7 +378,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "AppCdnServ"
+                    "QueueMgrServ"
                 ],
                 "summary": "罗列服务接口列表",
                 "responses": {
@@ -221,82 +438,27 @@
                     },
                     {
                         "type": "string",
-                        "description": "app id",
-                        "name": "app_id",
-                        "in": "formData",
+                        "description": "queue/消费队列名",
+                        "name": "queue",
+                        "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "app name",
-                        "name": "app_name",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "app logo url",
-                        "name": "app_logo_url",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "callback url",
-                        "name": "callback_url",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "proxy url addr",
-                        "name": "proxy_url",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "sync lives api",
-                        "name": "sync_url",
-                        "in": "formData"
+                        "description": "tag/消费进程标签",
+                        "name": "tag",
+                        "in": "query"
                     },
                     {
                         "enum": [
                             1,
-                            2
+                            2,
+                            3
                         ],
                         "type": "integer",
-                        "description": "sync type ( 1:post_sync,2:interval_sync )",
-                        "name": "sync_type",
-                        "in": "formData"
-                    },
-                    {
-                        "enum": [
-                            10,
-                            15,
-                            30,
-                            60,
-                            180
-                        ],
-                        "type": "integer",
-                        "description": "interval sync duration (unit: second)",
-                        "name": "interval_duration",
-                        "in": "formData"
-                    },
-                    {
-                        "enum": [
-                            0,
-                            3,
-                            5,
-                            10
-                        ],
-                        "type": "integer",
-                        "description": "interval fail retry times",
-                        "name": "interval_fail_times",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "default": "{\"pro_im_url\":\"\",\"test_im_url\":\"\",\"dev_im_url\":\"\"}",
-                        "description": "extras data",
-                        "name": "extras",
-                        "in": "formData"
+                        "description": "state/消费进程状态",
+                        "name": "state",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -335,7 +497,7 @@
         },
         "/state/update": {
             "post": {
-                "description": "change queue consumer state",
+                "description": "change queue consumer state or processor number",
                 "consumes": [
                     "application/x-www-form-urlencoded"
                 ],
@@ -356,81 +518,33 @@
                     },
                     {
                         "type": "string",
-                        "description": "app id",
-                        "name": "app_id",
+                        "description": "queue/消费队列名",
+                        "name": "queue",
                         "in": "formData",
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "app name",
-                        "name": "app_name",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "app logo url",
-                        "name": "app_logo_url",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "callback url",
-                        "name": "callback_url",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "proxy url addr",
-                        "name": "proxy_url",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "sync lives api",
-                        "name": "sync_url",
-                        "in": "formData"
-                    },
-                    {
                         "enum": [
                             1,
-                            2
+                            2,
+                            3
                         ],
                         "type": "integer",
-                        "description": "sync type ( 1:post_sync,2:interval_sync )",
-                        "name": "sync_type",
-                        "in": "formData"
-                    },
-                    {
-                        "enum": [
-                            10,
-                            15,
-                            30,
-                            60,
-                            180
-                        ],
-                        "type": "integer",
-                        "description": "interval sync duration (unit: second)",
-                        "name": "interval_duration",
-                        "in": "formData"
-                    },
-                    {
-                        "enum": [
-                            0,
-                            3,
-                            5,
-                            10
-                        ],
-                        "type": "integer",
-                        "description": "interval fail retry times",
-                        "name": "interval_fail_times",
+                        "description": "state/消费进程状态",
+                        "name": "state",
                         "in": "formData"
                     },
                     {
                         "type": "string",
-                        "default": "{\"pro_im_url\":\"\",\"test_im_url\":\"\",\"dev_im_url\":\"\"}",
-                        "description": "extras data",
-                        "name": "extras",
+                        "description": "tag/消费进程标签",
+                        "name": "tag",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "scale/消费队列协程数扩缩容",
+                        "name": "scale",
                         "in": "formData"
                     }
                 ],

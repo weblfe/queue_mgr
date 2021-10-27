@@ -37,71 +37,87 @@ info:
   title: QueueMgrServ
   version: "1.0"
 paths:
-  /consumer/create:
+  /bind:
     post:
       consumes:
       - application/x-www-form-urlencoded
-      description: register live app info
+      description: bind queue consumer
       parameters:
       - description: access jwt token
         in: header
         name: Authorization
         required: true
         type: string
-      - description: app name
+      - description: consumer/消费器名
         in: formData
-        name: app_name
+        name: consumer
+        type: string
+      - description: queue/队列名
+        in: formData
+        name: queue
+        type: string
+      - description: properties/绑定消费器相关参数(json)
+        in: formData
+        name: properties
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+      summary: 给队列绑定消费协程
+      tags:
+      - QueueMgrServ
+  /consumer/create:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: create queue consumer
+      parameters:
+      - description: access jwt token
+        in: header
+        name: Authorization
         required: true
         type: string
-      - description: app logo url
+      - description: consumer/消费器名
         in: formData
-        name: app_logo_url
+        name: consumer
+        required: true
         type: string
-      - description: callback url
-        in: formData
-        name: callback_url
-        type: string
-      - description: sync lives api
-        in: formData
-        name: sync_url
-        type: string
-      - description: proxy url addr
-        in: formData
-        name: proxy_url
-        type: string
-      - default: 1
-        description: sync type ( 1:post_sync,2:interval_sync )
+      - description: type/消费器类型
         enum:
-        - 1
-        - 2
+        - '"FastCGI"'
+        - '"Native"'
+        - '"Shell"'
+        - '"Api"'
+        - '"Grpc"'
+        - '"Proxy"'
+        - '"Plugins"'
         in: formData
-        name: sync_type
-        type: integer
-      - description: 'interval sync duration (unit: second)'
-        enum:
-        - 0
-        - 10
-        - 15
-        - 30
-        - 60
-        - 180
+        name: type
+        required: true
+        type: string
+      - description: properties/消费器相关参数(json)
         in: formData
-        name: interval_duration
-        type: integer
-      - default: 0
-        description: interval fail retry times
-        enum:
-        - 0
-        - 3
-        - 5
-        - 10
-        in: formData
-        name: interval_fail_times
-        type: integer
-      - default: '{"pro_im_url":"","test_im_url":"","dev_im_url":""}'
-        description: 'extras data '
-        in: formData
-        name: extras
+        name: properties
         type: string
       produces:
       - application/json
@@ -127,6 +143,136 @@ paths:
           schema:
             $ref: '#/definitions/entity.JsonResponse'
       summary: 创建队列消费器
+      tags:
+      - QueueMgrServ
+  /consumers:
+    get:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: query queue consumer lists
+      parameters:
+      - description: access jwt token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - default: 1
+        description: page/页码
+        in: formData
+        name: page
+        type: integer
+      - default: 10
+        description: count/分页量
+        in: query
+        name: count
+        type: integer
+      - description: state/消费进程状态
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        in: query
+        name: state
+        type: integer
+      - default: '"created_at:desc"'
+        description: sort/排序参数
+        in: query
+        name: sort
+        type: string
+      - description: 'name/限定队列名(模糊匹配eg: test*)'
+        in: query
+        name: queue
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+      summary: 罗列消费队列信息
+      tags:
+      - QueueMgrServ
+  /metrics:
+    get:
+      description: prometheus Metrics
+      produces:
+      - text/plain
+      summary: export prometheus metrics
+      tags:
+      - QueueMgrServ
+  /queue/create:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: add queue  info
+      parameters:
+      - description: access jwt token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: queue/队列名
+        in: formData
+        name: queue
+        required: true
+        type: string
+      - description: queue/队列链接驱动器类型
+        enum:
+        - '"AMQP"'
+        - '"MQTT"'
+        - '"HTTP"'
+        - '"WS"'
+        - '"PLUGINS"'
+        in: formData
+        name: driver
+        required: true
+        type: string
+      - description: properties/可消费队列相关参数(json)
+        in: formData
+        name: properties
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+      summary: 创建可消费队列信息
       tags:
       - QueueMgrServ
   /routers:
@@ -157,7 +303,7 @@ paths:
             $ref: '#/definitions/entity.KvMap'
       summary: 罗列服务接口列表
       tags:
-      - AppCdnServ
+      - QueueMgrServ
   /state:
     get:
       consumes:
@@ -169,62 +315,23 @@ paths:
         name: Authorization
         required: true
         type: string
-      - description: app id
-        in: formData
-        name: app_id
+      - description: queue/消费队列名
+        in: query
+        name: queue
         required: true
         type: string
-      - description: app name
-        in: formData
-        name: app_name
+      - description: tag/消费进程标签
+        in: query
+        name: tag
         type: string
-      - description: app logo url
-        in: formData
-        name: app_logo_url
-        type: string
-      - description: callback url
-        in: formData
-        name: callback_url
-        type: string
-      - description: proxy url addr
-        in: formData
-        name: proxy_url
-        type: string
-      - description: sync lives api
-        in: formData
-        name: sync_url
-        type: string
-      - description: sync type ( 1:post_sync,2:interval_sync )
+      - description: state/消费进程状态
         enum:
         - 1
         - 2
-        in: formData
-        name: sync_type
-        type: integer
-      - description: 'interval sync duration (unit: second)'
-        enum:
-        - 10
-        - 15
-        - 30
-        - 60
-        - 180
-        in: formData
-        name: interval_duration
-        type: integer
-      - description: interval fail retry times
-        enum:
-        - 0
         - 3
-        - 5
-        - 10
-        in: formData
-        name: interval_fail_times
+        in: query
+        name: state
         type: integer
-      - default: '{"pro_im_url":"","test_im_url":"","dev_im_url":""}'
-        description: extras data
-        in: formData
-        name: extras
-        type: string
       produces:
       - application/json
       responses:
@@ -255,69 +362,35 @@ paths:
     post:
       consumes:
       - application/x-www-form-urlencoded
-      description: change queue consumer state
+      description: change queue consumer state or processor number
       parameters:
       - description: access jwt token
         in: header
         name: Authorization
         required: true
         type: string
-      - description: app id
+      - description: queue/消费队列名
         in: formData
-        name: app_id
+        name: queue
         required: true
         type: string
-      - description: app name
-        in: formData
-        name: app_name
-        type: string
-      - description: app logo url
-        in: formData
-        name: app_logo_url
-        type: string
-      - description: callback url
-        in: formData
-        name: callback_url
-        type: string
-      - description: proxy url addr
-        in: formData
-        name: proxy_url
-        type: string
-      - description: sync lives api
-        in: formData
-        name: sync_url
-        type: string
-      - description: sync type ( 1:post_sync,2:interval_sync )
+      - description: state/消费进程状态
         enum:
         - 1
         - 2
-        in: formData
-        name: sync_type
-        type: integer
-      - description: 'interval sync duration (unit: second)'
-        enum:
-        - 10
-        - 15
-        - 30
-        - 60
-        - 180
-        in: formData
-        name: interval_duration
-        type: integer
-      - description: interval fail retry times
-        enum:
-        - 0
         - 3
-        - 5
-        - 10
         in: formData
-        name: interval_fail_times
+        name: state
         type: integer
-      - default: '{"pro_im_url":"","test_im_url":"","dev_im_url":""}'
-        description: extras data
+      - description: tag/消费进程标签
         in: formData
-        name: extras
+        name: tag
         type: string
+      - default: 0
+        description: scale/消费队列协程数扩缩容
+        in: formData
+        name: scale
+        type: integer
       produces:
       - application/json
       responses:
