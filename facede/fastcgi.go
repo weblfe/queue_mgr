@@ -2,6 +2,7 @@ package facede
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"net/http"
 	"sync"
 	"time"
 )
@@ -11,8 +12,10 @@ type Handler interface {
 	Cancel()
 	// Type 类型
 	Type() string
-	// Handle 处理请求
-	Handle(ctx *fiber.Ctx) error
+	// Call 处理请求
+	Call(ctx *fiber.Ctx) error
+	// Proxy 代理
+	Proxy(res http.ResponseWriter, req *http.Request) error
 	// SetTimeout 设置超时时长
 	SetTimeout(duration time.Duration)
 	// Register 注册处理器池

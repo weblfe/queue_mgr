@@ -22,6 +22,7 @@ require (
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/valyala/fasthttp v1.30.0
 	github.com/weblfe/drivers v1.0.1
+	github.com/yookoala/gofast v0.6.0
 	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9
 	google.golang.org/api v0.59.0
 	xorm.io/builder v0.3.9
