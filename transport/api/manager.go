@@ -14,7 +14,7 @@ type QueueManagerApi interface {
 	// @Accept  x-www-form-urlencoded
 	// @Produce  json
 	// @Param Authorization header string true "access jwt token"
-	// @Param consumer formData string true "consumer/消费器名"
+	// @Param name formData string true "name/消费器名"
 	// @Param type formData string true "type/消费器类型" Enums("FastCGI","Native","Shell","Api","Grpc","Proxy","Plugins")
 	// @Param properties formData string false "properties/消费器相关参数(json)"
 	// @Success 200 {object} entity.JsonResponse
@@ -31,7 +31,7 @@ type QueueManagerApi interface {
 	// @Accept  x-www-form-urlencoded
 	// @Produce  json
 	// @Param Authorization header string true "access jwt token"
-	// @Param queue formData string true "queue/队列名"
+	// @Param name formData string true "name/队列名"
 	// @Param driver formData string true "queue/队列链接驱动器类型" Enums("AMQP","MQTT","HTTP","WS","PLUGINS")
 	// @Param properties formData string false "properties/可消费队列相关参数(json)"
 	// @Success 200 {object} entity.JsonResponse

@@ -37,12 +37,12 @@ var (
 
 const (
 	ParamFastCgiRoot       = "root"
+	defaultNetwork         = "tcp"
 	ParamFastCgiPass       = "fastcgi_pass"
 	ParamFastCgiFile       = "fastcgi_file"
-	ParamFastCgiName       = "fastcgi_stream"
 	ParamFastCgiLogFile    = "fastcgi_log"
+	ParamFastCgiName       = "fastcgi_stream"
 	ParamFastCgiAddHeaders = "fastcgi_add_headers"
-	defaultNetwork         = "tcp"
 	PHPFastCGIType         = entity.FastCgiType("PHP-FastCGI")
 )
 

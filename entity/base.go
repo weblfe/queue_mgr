@@ -3,6 +3,7 @@ package entity
 import (
 	"crypto/md5"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"github.com/weblfe/queue_mgr/utils"
 	"reflect"
 	"sort"
@@ -433,4 +434,17 @@ func (arr *Arr)Len() int {
 
 func (arr *Arr) Sort()  {
 	sort.Strings(*arr)
+}
+
+
+// argsToJsonBytes 读取query 参数转 json bytes
+func argsToJsonBytes(args *fiber.Args) []byte {
+	var data = make(map[string]interface{})
+	args.VisitAll(func(key, v []byte) {
+		data[string(key)] = string(v)
+	})
+	if len(data) > 0 {
+		return utils.JsonEncode(data).Bytes()
+	}
+	return []byte(`{}`)
 }

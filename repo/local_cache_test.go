@@ -1,10 +1,8 @@
 package repo
 
 import (
-	"encoding/gob"
 	"github.com/subosito/gotenv"
 	"testing"
-	"time"
 )
 
 func TestGetLocalCacheRepo(t *testing.T) {
@@ -17,11 +15,6 @@ func TestGetLocalCacheRepo(t *testing.T) {
 	}
 }
 
-func init() {
-	gob.Register(&Options{})
-	gob.Register(time.Time{})
-}
-
 func TestLocalCacheRepository_Set(t *testing.T) {
 	if err := gotenv.Load("../.env"); err != nil {
 		t.Error(err)
@@ -29,10 +22,16 @@ func TestLocalCacheRepository_Set(t *testing.T) {
 	var (
 		repo = GetLocalCacheRepo()
 	)
-	err := repo.SetMust(`test_options`,repo.options)
+	err := repo.SetMust(`test_options`, repo.options)
 	if err != nil {
 		t.Error(err)
 	}
-
+	err = repo.SetMust("hashMap", map[string]interface{}{
+		"number":   1,
+		"optional": repo.options,
+	})
+	if err != nil {
+		t.Error(err)
+	}
 	defer repo.Sync()
 }
