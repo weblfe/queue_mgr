@@ -21,7 +21,8 @@ func Http(app *fiber.App) {
 	var (
 		monitorWare = monitor.New()
 		routerApi   = http.NewRouterApi(app)
-		promWare     = middlewares.CreatePromWare()
+		managerApi  = http.NewManagerApi()
+		promWare    = middlewares.CreatePromWare()
 	)
 
 	// 跨域
@@ -40,7 +41,7 @@ func Http(app *fiber.App) {
 
 	var router = app.Group("/queue_mgr")
 	// expose prometheus metrics 接口
-	router.All("/metrics",promWare)
+	router.All("/metrics", promWare)
 	// 数据监控
 	router.Get("/dashboard", monitorWare)
 	// swag
@@ -51,4 +52,21 @@ func Http(app *fiber.App) {
 	// 路由信息列表
 	router.Get("/routers", routerApi.ListRouter)
 
+	// --- QueueManager-API ---
+	// 罗列消费器列列表
+	router.Get("/consumers", managerApi.ListConsumers)
+	// 罗列消费队列列表
+	router.Get("/queues", managerApi.ListQueues)
+
+	// 控制消费队列状态
+	router.Post("/state/update", managerApi.Control)
+	// 查询队列消费器状态
+	router.Get("/state", managerApi.State)
+	// 给队列绑定消费协程
+	router.Post("/bind", managerApi.Bind)
+
+	// 创建可消费队列信息
+	router.Post("/queue/create", managerApi.CreateQueue)
+	// 创建队列消费器
+	router.Post("/consumer/create", managerApi.CreateConsumer)
 }

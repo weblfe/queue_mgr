@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 )
@@ -35,13 +36,14 @@ var (
 )
 
 const (
-	ParamFastCgiRoot    = "root"
-	ParamFastCgiPass    = "fastcgi_pass"
-	ParamFastCgiFile    = "fastcgi_file"
-	ParamFastCgiName    = "fastcgi_stream"
-	ParamFastCgiLogFile = "fastcgi_log"
-	defaultNetwork      = "tcp"
-	PHPFastCGIType      = entity.FastCgiType("PHP-FastCGI")
+	ParamFastCgiRoot       = "root"
+	ParamFastCgiPass       = "fastcgi_pass"
+	ParamFastCgiFile       = "fastcgi_file"
+	ParamFastCgiName       = "fastcgi_stream"
+	ParamFastCgiLogFile    = "fastcgi_log"
+	ParamFastCgiAddHeaders = "fastcgi_add_headers"
+	defaultNetwork         = "tcp"
+	PHPFastCGIType         = entity.FastCgiType("PHP-FastCGI")
 )
 
 func NewPHPFastCgiDomain() *PHPFastCgiDomainImpl {
@@ -140,8 +142,52 @@ func (domain *PHPFastCgiDomainImpl) Call(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	return domain.fastCgiPass(res, domain.addHeaders(req))
+}
+
+func (domain *PHPFastCgiDomainImpl) addHeaders(req *http.Request) *http.Request {
+	if domain == nil || domain.params == nil || req == nil {
+		return req
+	}
+	if !domain.params.Exists(ParamFastCgiAddHeaders) {
+		return req
+	}
+	var headers = domain.params.GetArr(ParamFastCgiAddHeaders)
+	if len(headers) <= 0 {
+		return req
+	}
+	for _, kv := range headers {
+		if !strings.Contains(kv, ":") {
+			continue
+		}
+		args := strings.Split(kv, ":")
+		if len(args) < 2 {
+			continue
+		}
+		var k, v = args[0], args[1]
+		if strings.HasPrefix(k, "@") {
+			// cover
+			k = strings.TrimPrefix(k, "@")
+			req.Header.Set(k, v)
+		} else {
+			// append
+			exist := req.Header.Get(k)
+			if exist == "" {
+				req.Header.Set(k, v)
+			} else {
+				req.Header.Add(k, v)
+			}
+		}
+	}
+	return req
+}
+
+func (domain *PHPFastCgiDomainImpl) fastCgiPass(res http.ResponseWriter, req *http.Request) error {
+	if domain.caller == nil {
+		return errors.New("fastcgi provider missed")
+	}
 	domain.caller.ServeHTTP(res, req)
-	return err
+	return nil
 }
 
 func (domain *PHPFastCgiDomainImpl) Proxy(res http.ResponseWriter, req *http.Request) error {

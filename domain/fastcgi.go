@@ -24,8 +24,8 @@ var (
 )
 
 const (
-	FastCGIQueueType = "fastCGI"
-	HeaderQueueType  = "Queue-Handler-Type"
+	FastCGIQueueType = "FastCGI"
+	HeaderQueueType  = "Queue-Consumer-Type"
 )
 
 func NewFastCgiDomain() *fastCgiMgrDomainImpl {

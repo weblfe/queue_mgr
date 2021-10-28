@@ -193,7 +193,7 @@
                 "tags": [
                     "QueueMgrServ"
                 ],
-                "summary": "罗列消费队列信息",
+                "summary": "罗列消费器列信息",
                 "parameters": [
                     {
                         "type": "string",
@@ -239,6 +239,12 @@
                         "type": "string",
                         "description": "name/限定队列名(模糊匹配eg: test*)",
                         "name": "queue",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "name/限定消费器名(模糊匹配eg: test*)",
+                        "name": "name",
                         "in": "query"
                     }
                 ],
@@ -335,6 +341,101 @@
                         "description": "properties/可消费队列相关参数(json)",
                         "name": "properties",
                         "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.JsonResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/entity.JsonResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/entity.JsonResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/entity.JsonResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/entity.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/queues": {
+            "get": {
+                "description": "query queue consumer lists",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "QueueMgrServ"
+                ],
+                "summary": "罗列消费队列信息",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "access jwt token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "page/页码",
+                        "name": "page",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "count/分页量",
+                        "name": "count",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            0,
+                            1,
+                            2,
+                            3
+                        ],
+                        "type": "integer",
+                        "description": "state/消费进程状态",
+                        "name": "state",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "\"created_at:desc\"",
+                        "description": "sort/排序参数",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "name/限定队列名(模糊匹配eg: test*)",
+                        "name": "queue",
+                        "in": "query"
                     }
                 ],
                 "responses": {

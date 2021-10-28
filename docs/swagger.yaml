@@ -184,6 +184,10 @@ paths:
         in: query
         name: queue
         type: string
+      - description: 'name/限定消费器名(模糊匹配eg: test*)'
+        in: query
+        name: name
+        type: string
       produces:
       - application/json
       responses:
@@ -207,7 +211,7 @@ paths:
           description: ""
           schema:
             $ref: '#/definitions/entity.JsonResponse'
-      summary: 罗列消费队列信息
+      summary: 罗列消费器列信息
       tags:
       - QueueMgrServ
   /metrics:
@@ -273,6 +277,71 @@ paths:
           schema:
             $ref: '#/definitions/entity.JsonResponse'
       summary: 创建可消费队列信息
+      tags:
+      - QueueMgrServ
+  /queues:
+    get:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: query queue consumer lists
+      parameters:
+      - description: access jwt token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - default: 1
+        description: page/页码
+        in: formData
+        name: page
+        type: integer
+      - default: 10
+        description: count/分页量
+        in: query
+        name: count
+        type: integer
+      - description: state/消费进程状态
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        in: query
+        name: state
+        type: integer
+      - default: '"created_at:desc"'
+        description: sort/排序参数
+        in: query
+        name: sort
+        type: string
+      - description: 'name/限定队列名(模糊匹配eg: test*)'
+        in: query
+        name: queue
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/entity.JsonResponse'
+      summary: 罗列消费队列信息
       tags:
       - QueueMgrServ
   /routers:

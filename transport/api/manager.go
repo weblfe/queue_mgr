@@ -93,7 +93,27 @@ type QueueManagerApi interface {
 	// @Router /state/update [post]
 	Control(ctx *fiber.Ctx) error
 
-	// Lists godoc
+	// ListConsumers godoc
+	// @Summary 罗列消费器列信息
+	// @Tags QueueMgrServ
+	// @Description query queue consumer lists
+	// @Accept  x-www-form-urlencoded
+	// @Produce  json
+	// @Param Authorization header string true "access jwt token"
+	// @Param page formData int false "page/页码" default(1)
+	// @Param count query int false "count/分页量" default(10)
+	// @Param state query int false "state/消费进程状态" Enums(0,1,2,3)
+	// @Param sort query string false "sort/排序参数" default("created_at:desc")
+	// @Param queue query string false "name/限定队列名(模糊匹配eg: test*)"
+	// @Param name  query string false "name/限定消费器名(模糊匹配eg: test*)"
+	// @Success 200 {object} entity.JsonResponse
+	// @Failure 400,404 {object} entity.JsonResponse
+	// @Failure 500 {object} entity.JsonResponse
+	// @Failure default {object} entity.JsonResponse
+	// @Router /consumers [get]
+	ListConsumers(ctx *fiber.Ctx) error
+
+	// ListQueues godoc
 	// @Summary 罗列消费队列信息
 	// @Tags QueueMgrServ
 	// @Description query queue consumer lists
@@ -109,6 +129,7 @@ type QueueManagerApi interface {
 	// @Failure 400,404 {object} entity.JsonResponse
 	// @Failure 500 {object} entity.JsonResponse
 	// @Failure default {object} entity.JsonResponse
-	// @Router /consumers [get]
-	Lists(ctx *fiber.Ctx) error
+	// @Router /queues [get]
+	ListQueues(ctx *fiber.Ctx) error
+
 }
