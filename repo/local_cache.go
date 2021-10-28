@@ -4,6 +4,8 @@ import (
 	"errors"
 	"github.com/patrickmn/go-cache"
 	"github.com/weblfe/queue_mgr/utils"
+	"io"
+	"os"
 	"path/filepath"
 	"runtime"
 	"sync"
@@ -18,15 +20,16 @@ type (
 	}
 
 	Options struct {
-		DefaultExpiration time.Duration `json:"default_expiration" env:"local_default_expiration"`
-		CleanupInterval   time.Duration `json:"cleanup_interval" env:"local_cleanup_interval"`
-		SaveFile          string        `json:"save_file" env:"local_save_file"`
-		Redis             string        `json:"redis" env:"local_redis"`
+		DefaultExpiration time.Duration `json:"default_expiration" env:"local_cache_default_expiration"`
+		CleanupInterval   time.Duration `json:"cleanup_interval" env:"local_cache_cleanup_interval"`
+		SaveFile          string        `json:"save_file" env:"local_cache_save_file"`
+		ReadOnly          bool          `json:"read_only" env:"local_cache_read_only"`
+		Redis             string        `json:"redis" env:"local_cache_redis"`
 	}
 )
 
 var (
-	defaultOptions    = CreateOptionsWithEnv()
+	defaultOptions    *Options
 	localCacheRepoIns *LocalCacheRepository
 	locker            = sync.RWMutex{}
 )
@@ -36,15 +39,23 @@ func CreateOptionsWithEnv() *Options {
 		DefaultExpiration: 5 * time.Minute,
 		CleanupInterval:   10 * time.Minute,
 	}
+	opt.ReadOnly = utils.GetEnvBool("LOCAL_CACHE_READ_ONLY")
 	opt.SaveFile = utils.GetEnvVal("LOCAL_CACHE_STORAGE_FILE", "")
 	opt.DefaultExpiration = utils.GetEnvDuration("LOCAL_CACHE_EXPIRATION", opt.DefaultExpiration)
 	opt.CleanupInterval = utils.GetEnvDuration("LOCAL_CACHE_CLEANUP_INTERVAL", opt.CleanupInterval)
 	return opt
 }
 
+func GetDefaultOptions() *Options {
+	if defaultOptions == nil {
+		defaultOptions = CreateOptionsWithEnv()
+	}
+	return defaultOptions
+}
+
 func newLocalCacheRepo(opts ...*Options) *LocalCacheRepository {
 	var repo = new(LocalCacheRepository)
-	opts = append(opts, defaultOptions)
+	opts = append(opts, GetDefaultOptions())
 	repo.options = opts[0]
 	return repo.load()
 }
@@ -69,10 +80,22 @@ func (repo *LocalCacheRepository) load() *LocalCacheRepository {
 			repo.options.SaveFile = ""
 		} else {
 			repo.options.SaveFile = file
-			if err = repo.storage.LoadFile(file); err != nil {
-				GetLogger("repo").Errorln(err)
+			if !repo.options.ReadOnly {
+				_, err = os.Stat(file)
+				if err != nil && os.IsNotExist(err) {
+					base := filepath.Dir(file)
+					_ = os.MkdirAll(base, os.ModePerm)
+					if fs, err := os.Create(file); err == nil {
+						_ = fs.Close()
+					}
+				}
 			}
-			runtime.SetFinalizer(repo,  (*LocalCacheRepository).destroy)
+			if err = repo.storage.LoadFile(file); err != nil {
+				if io.EOF != err {
+					GetLogger("repo").Errorln(err)
+				}
+			}
+			runtime.SetFinalizer(repo, (*LocalCacheRepository).Destroy)
 		}
 	}
 	if repo.options.Redis != "" && repo.remote == nil {
@@ -143,28 +166,37 @@ func (repo *LocalCacheRepository) Get(key string) (interface{}, bool) {
 	return storage.Get(key)
 }
 
-
-func (repo *LocalCacheRepository)remoteAdd(key string, v interface{}, expire ...time.Duration) {
+func (repo *LocalCacheRepository) remoteAdd(key string, v interface{}, expire ...time.Duration) {
 	return
 }
-
 
 func (repo *LocalCacheRepository) remoteGet(key string) (interface{}, bool) {
 	var storage = repo.getRemote()
 	if storage == nil {
 		return nil, false
 	}
-	return nil,false
+	return nil, false
 }
 
-func (repo *LocalCacheRepository)getRemote() *RedisRepository {
+func (repo *LocalCacheRepository) getRemote() *RedisRepository {
 	return repo.remote
 }
 
-func (repo *LocalCacheRepository) destroy() {
+func (repo *LocalCacheRepository) Destroy() {
 	defer runtime.SetFinalizer(repo, nil)
+	repo.Sync()
+	repo.storage = nil
+	repo.options = nil
+	repo.remote = nil
+}
+
+func (repo *LocalCacheRepository) Sync() {
 	if repo.options.SaveFile != "" {
-		if err := repo.GetCacheStorage().SaveFile(repo.options.SaveFile); err != nil {
+		var storage = repo.GetCacheStorage()
+		if len(storage.Items()) <= 0 {
+			return
+		}
+		if err := storage.SaveFile(repo.options.SaveFile); err != nil {
 			GetLogger("repo").Errorln(err)
 		}
 	}
