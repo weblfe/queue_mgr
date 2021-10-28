@@ -30,16 +30,16 @@ type PHPFastCgiDomainImpl struct {
 
 var (
 	defaultTimeout      = 3 * time.Minute
-	defaultFastcgiRoot  = "/var/www/html"
-	defaultFastcgiIndex = "/var/www/html/index.php"
+	defaultFastCgiRoot  = "/var/www/html"
+	defaultFastCgiIndex = "/var/www/html/index.php"
 )
 
 const (
-	ParamFastcgiRoot    = "root"
-	ParamFastcgiPass    = "fastcgi_pass"
-	ParamFastcgiFile    = "fastcgi_file"
-	ParamFastcgiName    = "fastcgi_stream"
-	ParamFastcgiLogFile = "fastcgi_log"
+	ParamFastCgiRoot    = "root"
+	ParamFastCgiPass    = "fastcgi_pass"
+	ParamFastCgiFile    = "fastcgi_file"
+	ParamFastCgiName    = "fastcgi_stream"
+	ParamFastCgiLogFile = "fastcgi_log"
 	defaultNetwork      = "tcp"
 	PHPFastCGIType      = entity.FastCgiType("PHP-FastCGI")
 )
@@ -70,20 +70,20 @@ func (domain *PHPFastCgiDomainImpl) Parse(properties []byte) error {
 	if err := utils.JsonDecode(properties, &domain.params); err != nil {
 		return err
 	}
-	var addr = domain.params.GetStr(ParamFastcgiPass)
+	var addr = domain.params.GetStr(ParamFastCgiPass)
 	if addr == "" {
-		return errors.New("miss param: " + ParamFastcgiPass)
+		return errors.New("miss param: " + ParamFastCgiPass)
 	}
 	var (
-		root     = domain.params.GetStr(ParamFastcgiRoot, defaultFastcgiRoot)
-		endpoint = domain.params.GetStr(ParamFastcgiFile, defaultFastcgiIndex)
+		root     = domain.params.GetStr(ParamFastCgiRoot, defaultFastCgiRoot)
+		endpoint = domain.params.GetStr(ParamFastCgiFile, defaultFastCgiIndex)
 	)
 	if d := domain.params.GetDuration("fastcgi_timeout", 0); d > 0 {
 		domain.SetTimeout(d)
 	}
 	if root == "" {
 		if endpoint == "" {
-			return errors.New("miss param: " + ParamFastcgiRoot)
+			return errors.New("miss param: " + ParamFastCgiRoot)
 		}
 		// 1. conn addr
 		domain.connFactory = gofast.SimpleConnFactory(defaultNetwork, addr)
@@ -156,7 +156,7 @@ func (domain *PHPFastCgiDomainImpl) getLogger() *log.Logger {
 	if domain.logger != nil {
 		return log.New(domain.logger.Out, domain.getName(), log.LstdFlags)
 	}
-	if file := domain.params.GetStr(ParamFastcgiLogFile, ""); file != "" {
+	if file := domain.params.GetStr(ParamFastCgiLogFile, ""); file != "" {
 		if fd, err := os.OpenFile(file, os.O_WRONLY|os.O_CREATE|os.O_APPEND, os.ModePerm); err == nil {
 			return log.New(fd, domain.getName(), log.LstdFlags)
 		}
@@ -166,7 +166,7 @@ func (domain *PHPFastCgiDomainImpl) getLogger() *log.Logger {
 
 func (domain *PHPFastCgiDomainImpl) getName() string {
 	if domain.params != nil {
-		return domain.params.GetStr(ParamFastcgiName, domain.addr)
+		return domain.params.GetStr(ParamFastCgiName, domain.addr)
 	}
 	return domain.addr
 }

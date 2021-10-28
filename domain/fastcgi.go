@@ -9,7 +9,6 @@ import (
 )
 
 type (
-
 	FastCgiCreator func(ctx *fiber.Ctx) (facede.Handler, error)
 
 	fastCgiMgrDomainImpl struct {
@@ -18,11 +17,10 @@ type (
 		fastCgiPool map[entity.FastCgiType]sync.Pool
 		factories   map[entity.FastCgiType]FastCgiCreator
 	}
-
 )
 
 var (
-	fastCgiDefault = NewFastCgiDomain()
+	fastCgiDefault *fastCgiMgrDomainImpl
 )
 
 const (
@@ -36,6 +34,9 @@ func NewFastCgiDomain() *fastCgiMgrDomainImpl {
 }
 
 func GetFastCGIDomain() *fastCgiMgrDomainImpl {
+	if fastCgiDefault == nil {
+		fastCgiDefault = NewFastCgiDomain()
+	}
 	return fastCgiDefault
 }
 

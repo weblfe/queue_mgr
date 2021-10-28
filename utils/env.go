@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -80,18 +81,26 @@ func GetEnvDuration(key string, def ...time.Duration) time.Duration {
 // GetEnvTime 获取时间
 func GetEnvTime(key string, def ...*time.Time) *time.Time {
 	def = append(def, nil)
-	var b = GetEnvVal(key)
+	var (
+		err error
+		d   time.Time
+		b   = GetEnvVal(key)
+	)
 	if b == "" {
 		return def[0]
 	}
-	d, err := time.Parse(`2006-01-02 15:04:05`, b)
-	if err != nil {
-		fmt.Println("GetEnvTime Error:", err)
-	}
-	d, err = time.Parse(`2006-01-02`, b)
-	if err != nil {
-		fmt.Println("GetEnvTime Error:", err)
-		return def[0]
+	if strings.Contains(b, ":") {
+		d, err = time.Parse(`2006-01-02 15:04:05`, b)
+		if err != nil {
+			fmt.Println("GetEnvTime Error:", err)
+			return def[0]
+		}
+	} else {
+		d, err = time.Parse(`2006-01-02`, b)
+		if err != nil {
+			fmt.Println("GetEnvTime Error:", err)
+			return def[0]
+		}
 	}
 	return &d
 }
