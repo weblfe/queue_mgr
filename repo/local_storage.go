@@ -23,6 +23,12 @@ var (
 	localStorage = newLocalStorageRepo()
 )
 
+const (
+	StorageDirKey = "LOCAL_STORAGE_DIR"
+	StorageDefaultKey = "LOCAL_STORAGE_DEFAULT"
+	StorageReadOnlyKey = "LOCAL_STORAGE_READ_ONLY"
+)
+
 func newLocalStorageRepo() *localStorageRepository {
 	var storage = &localStorageRepository{}
 
@@ -34,7 +40,7 @@ func GetLocalStorageRepo() *localStorageRepository {
 }
 
 func OpenDbWithEnv(name string) (*leveldb.DB, error) {
-	var key = fmt.Sprintf("%s", "LOCAL_STORAGE_FILE")
+	var key = fmt.Sprintf("%s", StorageDirKey)
 	if name != "" {
 		key = strings.ToUpper(fmt.Sprintf("%s_%s", name, key))
 	}
@@ -44,9 +50,9 @@ func OpenDbWithEnv(name string) (*leveldb.DB, error) {
 	}
 	var opts = &opt.Options{}
 	if name == "" {
-		opts.ReadOnly = utils.GetEnvBool("LOCAL_STORAGE_READ_ONLY")
+		opts.ReadOnly = utils.GetEnvBool(StorageReadOnlyKey)
 	} else {
-		opts.ReadOnly = utils.GetEnvBool(fmt.Sprintf("%s_%s", name, "LOCAL_STORAGE_READ_ONLY"))
+		opts.ReadOnly = utils.GetEnvBool(fmt.Sprintf("%s_%s", name, StorageReadOnlyKey))
 	}
 	return OpenDbWithFile(file, opts)
 }
@@ -55,7 +61,7 @@ func OpenDbWithFile(file string, opts ...*opt.Options) (*leveldb.DB, error) {
 	var dbFile, _ = filepath.Abs(file)
 	if len(opts) <= 0 {
 		opts = append(opts, &opt.Options{
-			ReadOnly: utils.GetEnvBool("LOCAL_STORAGE_READ_ONLY"),
+			ReadOnly: utils.GetEnvBool(StorageReadOnlyKey),
 		})
 	}
 	if _, err := os.Stat(dbFile); err != nil {
@@ -70,7 +76,7 @@ func CreateDbWithFile(file string, opts ...*opt.Options) (*leveldb.DB, error) {
 	var dbFile, _ = filepath.Abs(file)
 	if len(opts) <= 0 {
 		opts = append(opts, &opt.Options{
-			ReadOnly: utils.GetEnvBool("LOCAL_STORAGE_READ_ONLY"),
+			ReadOnly: utils.GetEnvBool(StorageReadOnlyKey),
 		})
 	}
 	if _, err := os.Stat(dbFile); err != nil {
@@ -87,7 +93,7 @@ func CreateDbWithFile(file string, opts ...*opt.Options) (*leveldb.DB, error) {
 func (repo *localStorageRepository) init() *localStorageRepository {
 	repo.locker = sync.RWMutex{}
 	repo.dbs = make(map[string]*leveldb.DB)
-	repo.defaultDB = utils.GetEnvVal("LOCAL_STORAGE_DEFAULT", "default")
+	repo.defaultDB = utils.GetEnvVal(StorageDefaultKey, "")
 	// 对象回收时
 	runtime.SetFinalizer(repo, (*localStorageRepository).destroy)
 	return repo
@@ -185,6 +191,11 @@ func (repo *localStorageRepository) GetStorage(name ...string) (*leveldb.DB, boo
 	defer repo.locker.Unlock()
 	var key = name[0]
 	if db, ok := repo.dbs[key]; ok {
+		return db, true
+	}
+	db, err := OpenDbWithEnv(name[0])
+	if  err == nil {
+		repo.dbs[key] = db
 		return db, true
 	}
 	return nil, false
