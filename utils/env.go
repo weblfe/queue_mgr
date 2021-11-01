@@ -3,13 +3,23 @@ package utils
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
 )
 
+var (
+	envVarReg = regexp.MustCompile(`(\$\{.+\})`)
+)
+
 // GetEnvVal 获取字符串
 func GetEnvVal(key string, def ...string) string {
+	return GetEnvOr(key, def...)
+}
+
+// GetEnvOr 获取环境变量
+func GetEnvOr(key string, def ...string) string {
 	def = append(def, "")
 	var v = os.Getenv(key)
 	if v == "" {
@@ -131,4 +141,31 @@ func GetEnvArr(key string, def ...[]string) []string {
 		return def[0]
 	}
 	return Str2Arr(b)
+}
+
+// ParseEnvValue 解析
+func ParseEnvValue(value string, depth ...int) string {
+	depth = append(depth, 0)
+	if value != "" && envVarReg.Match([]byte(value)) {
+		var subArr = envVarReg.FindAllSubmatch([]byte(value), -1)
+		if len(subArr) <= 0 {
+			return value
+		}
+		for _, v := range subArr {
+			var (
+				name = strings.TrimPrefix(strings.TrimSuffix(string(v[0]), `}`), `${`)
+				valueOr  = GetEnvOr(name)
+			)
+			if valueOr == "" {
+				continue
+			}
+			if envVarReg.Match([]byte(valueOr)) {
+				if depth[0] <= 3 {
+					valueOr = ParseEnvValue(valueOr, depth[0]+1)
+				}
+			}
+			value = strings.ReplaceAll(value, string(v[0]), valueOr)
+		}
+	}
+	return value
 }

@@ -21,11 +21,8 @@ func ParseProperties(data string) (*Properties, error) {
 }
 
 func (p *Properties) Keys() []string {
-	var (
-		keys []string
-		kv   = map[string]string(*p)
-	)
-	for k := range kv {
+	var keys []string
+	for k := range *p {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
@@ -34,6 +31,13 @@ func (p *Properties) Keys() []string {
 
 func (p *Properties) String() string {
 	return utils.JsonEncode(p).String()
+}
+
+func (p *Properties) Len() int {
+	if p == nil {
+		return 0
+	}
+	return len(*p)
 }
 
 func (p *Properties) MarshalJSON() ([]byte, error) {
@@ -46,16 +50,17 @@ func (p *Properties) UnmarshalJSON(data []byte) error {
 }
 
 func (p *Properties) GetOr(key string, v ...string) string {
-	if v, ok := (*p)[key]; ok {
-		return v
+	if value, ok := (*p)[key]; ok {
+		return utils.ParseEnvValue(value)
 	}
-	if len(v) <= 0 {
-		v = append(v, "")
-	}
-	return v[0]
+	v = append(v, "")
+	return utils.ParseEnvValue(v[0])
 }
 
 func (p *Properties) Exists(key string) bool {
+	if p == nil {
+		return false
+	}
 	if _, ok := (*p)[key]; ok {
 		return ok
 	}
@@ -63,22 +68,16 @@ func (p *Properties) Exists(key string) bool {
 }
 
 func (p *Properties) VisitAll(each func(k string, v interface{})) {
-	var (
-		kv   = map[string]string(*p)
-		keys = p.Keys()
-	)
+	var keys = p.Keys()
 	for _, k := range keys {
-		each(k, kv[k])
+		each(k, (*p)[k])
 	}
 }
 
-func (p *Properties) VisitAllCond(each func(k string, v interface{}) bool) {
-	var (
-		kv   = map[string]string(*p)
-		keys = p.Keys()
-	)
+func (p *Properties) Filters(each func(k string, v interface{}) bool) {
+	var keys = p.Keys()
 	for _, k := range keys {
-		if !each(k, kv[k]) {
+		if !each(k, (*p)[k]) {
 			break
 		}
 	}
