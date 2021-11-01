@@ -24,3 +24,5 @@ func (info *QueryBindInfo) TableName() string {
 	}
 	return info.baseModel.TableName()
 }
+
+
