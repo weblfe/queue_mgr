@@ -2,9 +2,10 @@ package entity
 
 import (
 	"github.com/weblfe/queue_mgr/utils"
+	"sort"
 )
 
-type Properties KvMap
+type Properties map[string]string
 
 func NewProperties() *Properties {
 	var p = new(Properties)
@@ -20,12 +21,23 @@ func ParseProperties(data string) (*Properties, error) {
 }
 
 func (p *Properties) Keys() []string {
-	var kv = KvMap(*p)
-	return kv.Keys()
+	var keys []string
+	for k := range *p {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 func (p *Properties) String() string {
 	return utils.JsonEncode(p).String()
+}
+
+func (p *Properties) Len() int {
+	if p == nil {
+		return 0
+	}
+	return len(*p)
 }
 
 func (p *Properties) MarshalJSON() ([]byte, error) {
@@ -37,33 +49,35 @@ func (p *Properties) UnmarshalJSON(data []byte) error {
 	return utils.JsonDecode(data, p)
 }
 
-func (p *Properties) GetOr(key string, v ...interface{}) interface{} {
-	var kv = KvMap(*p)
-	return kv.Get(key, v...)
+func (p *Properties) GetOr(key string, v ...string) string {
+	if value, ok := (*p)[key]; ok {
+		return utils.ParseEnvValue(value)
+	}
+	v = append(v, "")
+	return utils.ParseEnvValue(v[0])
 }
 
 func (p *Properties) Exists(key string) bool {
-	var kv = KvMap(*p)
-	return kv.Exists(key)
+	if p == nil {
+		return false
+	}
+	if _, ok := (*p)[key]; ok {
+		return ok
+	}
+	return false
 }
 
 func (p *Properties) VisitAll(each func(k string, v interface{})) {
-	var (
-		kv   = KvMap(*p)
-		keys = p.Keys()
-	)
+	var keys = p.Keys()
 	for _, k := range keys {
-		each(k, kv[k])
+		each(k, (*p)[k])
 	}
 }
 
-func (p *Properties) VisitAllCond(each func(k string, v interface{}) bool) {
-	var (
-		kv   = KvMap(*p)
-		keys = p.Keys()
-	)
+func (p *Properties) Filters(each func(k string, v interface{}) bool) {
+	var keys = p.Keys()
 	for _, k := range keys {
-		if !each(k, kv[k]) {
+		if !each(k, (*p)[k]) {
 			break
 		}
 	}
