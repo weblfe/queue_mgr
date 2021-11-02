@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	envVarReg = regexp.MustCompile(`(\$\{.+\})`)
+	matchRegexp = regexp.MustCompile(`^\$\{.+\}$`)
 )
 
 // GetEnvVal 获取字符串
@@ -26,6 +26,15 @@ func GetEnvOr(key string, def ...string) string {
 		return def[0]
 	}
 	return v
+}
+
+// GetEnvOk 是否获取成功
+func GetEnvOk(key string) (string, bool) {
+	var v = os.Getenv(key)
+	if v == "" {
+		return "", false
+	}
+	return v, true
 }
 
 // GetEnvBool 获取bool
@@ -146,25 +155,32 @@ func GetEnvArr(key string, def ...[]string) []string {
 // ParseEnvValue 解析
 func ParseEnvValue(value string, depth ...int) string {
 	depth = append(depth, 0)
-	if value != "" && envVarReg.Match([]byte(value)) {
-		var subArr = envVarReg.FindAllSubmatch([]byte(value), -1)
-		if len(subArr) <= 0 {
-			return value
-		}
-		for _, v := range subArr {
-			var (
-				name = strings.TrimPrefix(strings.TrimSuffix(string(v[0]), `}`), `${`)
-				valueOr  = GetEnvOr(name)
-			)
-			if valueOr == "" {
+	if depth[0] > 3 {
+		return value
+	}
+	if value != "" && strings.HasPrefix(value, "${") && strings.HasSuffix(value, "}") {
+		var splits = strings.Split(value, "${")
+		for _, v := range splits {
+			if v == "" {
 				continue
 			}
-			if envVarReg.Match([]byte(valueOr)) {
-				if depth[0] <= 3 {
-					valueOr = ParseEnvValue(valueOr, depth[0]+1)
-				}
+			if count := strings.Count(v, "}"); count == 0 || count > 1 {
+				continue
 			}
-			value = strings.ReplaceAll(value, string(v[0]), valueOr)
+			var key = strings.Split(v, "}")
+			if len(key) < 1 {
+				continue
+			}
+			var valueOr, ok = GetEnvOk(key[0])
+			if !ok {
+				continue
+			}
+			if valueOr != "" && strings.HasPrefix(valueOr, "${") && strings.HasSuffix(valueOr, "}") {
+				valueOr = ParseEnvValue(valueOr, depth[0]+1)
+			}
+			if valueOr != "" {
+				value = strings.ReplaceAll(value, fmt.Sprintf("${%s}", key[0]), valueOr)
+			}
 		}
 	}
 	return value

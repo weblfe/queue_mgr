@@ -54,7 +54,10 @@ func (p *Properties) GetOr(key string, v ...string) string {
 		return utils.ParseEnvValue(value)
 	}
 	v = append(v, "")
-	return utils.ParseEnvValue(v[0])
+	if v[0] != "" {
+		return utils.ParseEnvValue(v[0])
+	}
+	return v[0]
 }
 
 func (p *Properties) Exists(key string) bool {
