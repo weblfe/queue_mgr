@@ -56,6 +56,12 @@ func (serv *serverDomainImpl) Register(queue *models.QueueInfo) bool {
 	return serv.add(queue, bind)
 }
 
+// Load 载入
+func (serv *serverDomainImpl) Load() *serverDomainImpl {
+
+		return  serv
+}
+
 func (serv *serverDomainImpl) add(base *models.QueueInfo, bind *models.QueryBindInfo) bool {
 	if base == nil {
 		return false
