@@ -5,12 +5,13 @@ type (
 )
 
 const (
-	Wait     QueueState = 0
-	Init     QueueState = 1
-	Running  QueueState = 2
-	Sleeping QueueState = 3
-	Idle     QueueState = 4
-	Stop     QueueState = 5
+	Wait       QueueState = 0
+	Init       QueueState = 1
+	Running    QueueState = 2
+	Sleeping   QueueState = 3
+	Idle       QueueState = 4
+	Stop       QueueState = 5
+	ReStarting QueueState = 6
 )
 
 func (state QueueState) Describe() string {
@@ -27,13 +28,15 @@ func (state QueueState) Describe() string {
 		return "queue idle"
 	case Stop:
 		return "queue stopped"
+	case ReStarting:
+		return "queue restarting"
 	}
 	return ""
 }
 
 func (state QueueState) Check() bool {
 	switch state {
-	case Wait, Init, Running, Sleeping, Idle, Stop:
+	case Wait, Init, Running, Sleeping, Idle, Stop, ReStarting:
 		return true
 	default:
 		return false
@@ -42,6 +45,14 @@ func (state QueueState) Check() bool {
 
 func (state QueueState) Int() uint {
 	return uint(state)
+}
+
+func (state QueueState) Is(s uint) bool {
+	switch s {
+	case Wait.Int(), Init.Int(), Running.Int(), Sleeping.Int(), Idle.Int(), Stop.Int(), ReStarting.Int():
+		return true
+	}
+	return false
 }
 
 func (state QueueState) String() string {
@@ -58,6 +69,8 @@ func (state QueueState) String() string {
 		return "idle"
 	case Stop:
 		return "stopped"
+	case ReStarting:
+		return "restart"
 	}
 	return ""
 }

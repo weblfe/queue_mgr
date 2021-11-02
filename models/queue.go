@@ -40,3 +40,7 @@ func (info *QueueInfo) Create(params entity.QueueParams) error {
 func (info *QueueInfo) GetByCond(params builder.Cond) (*QueueInfo, error) {
 	return nil, nil
 }
+
+func (info *QueueInfo)GetBinding() *QueryBindInfo  {
+		return nil
+}

@@ -28,10 +28,10 @@ const (
 )
 
 func newAppStarter() *appStarter {
-	var appStarter = new(appStarter)
-	appStarter.baseStarterConstructor = newStarterConstructor()
-	appStarter.name = "appStarter"
-	return appStarter
+	var app = new(appStarter)
+	app.baseStarterConstructor = newStarterConstructor()
+	app.name = "app"
+	return app
 }
 
 // 载入 路由

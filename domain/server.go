@@ -2,187 +2,138 @@ package domain
 
 import (
 	"github.com/weblfe/queue_mgr/entity"
-	"github.com/weblfe/queue_mgr/facede"
 	"github.com/weblfe/queue_mgr/models"
+	"github.com/weblfe/queue_mgr/repo"
+	"os"
+	"os/signal"
 	"sync"
+	"syscall"
+	"time"
 )
 
 type (
-	serverDomain struct {
+	Queue string
+	State string
+
+	serverDomainImpl struct {
+		safe          sync.RWMutex
+		refreshTicker *time.Ticker
+		quit          chan os.Signal
 		// 队列状态树
-		trees map[string]*stateTree
+		trees map[State]*stateTree
 		// 队列信息存储
-		queues map[string]*QueueInfo
+		queues map[Queue]entity.QueueState
 	}
 
+	// 队列状态数
 	stateTree struct {
 		safe    sync.RWMutex
 		items   []*QueueInfo
 		indexes map[string]int
 		state   entity.QueueState
 	}
-
-	QueueInfo struct {
-		advisor  facede.Advisor
-		Base     *models.QueueInfo
-		Bind     *models.QueryBindInfo
-		consumer *models.ConsumerInfo
-	}
 )
 
-func NewStateTree(state entity.QueueState) *stateTree {
-	var tree = new(stateTree)
-	tree.state = state
-	tree.indexes = make(map[string]int)
-	return tree
+func NewServDomain() *serverDomainImpl {
+	var servImpl = new(serverDomainImpl)
+	return servImpl.init()
 }
 
-func (tree *stateTree) Check() bool {
-	if tree.state.Check() {
-		return true
+func (serv *serverDomainImpl) init() *serverDomainImpl {
+	serv.safe = sync.RWMutex{}
+	serv.quit = make(chan os.Signal)
+	serv.trees = make(map[State]*stateTree)
+	serv.refreshTicker = time.NewTicker(time.Second)
+	serv.queues = make(map[Queue]entity.QueueState)
+	return serv
+}
+
+func (serv *serverDomainImpl) Register(queue *models.QueueInfo) bool {
+	if queue == nil {
+		return false
 	}
-	return false
+	var bind = queue.GetBinding()
+	return serv.add(queue, bind)
 }
 
-func (tree *stateTree) Name() string {
-	return tree.state.String()
-}
-
-func (tree *stateTree) Len() int {
-	return len(tree.items)
-}
-
-func (tree *stateTree) Add(item *QueueInfo) int {
-	if item == nil {
-		return 0
+func (serv *serverDomainImpl) add(base *models.QueueInfo, bind *models.QueryBindInfo) bool {
+	if base == nil {
+		return false
 	}
-	tree.safe.Lock()
-	defer tree.safe.Unlock()
-	var name = item.Queue()
-	if len(tree.items) > 0 {
-		if n, ok := tree.indexes[name]; ok {
-			return n
-		}
-	}
-	tree.items = append(tree.items, item)
-	var index = len(tree.items)
-	tree.indexes[name] = index
-	return index
-}
-
-func (tree *stateTree) Remove(queue string) bool {
-	tree.safe.Lock()
-	defer tree.safe.Unlock()
-	var size = len(tree.items)
-	if size > 0 {
-		if n, ok := tree.indexes[queue]; ok {
-			if tree.delete(n) {
-				delete(tree.indexes, queue)
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func (tree *stateTree) Clear() bool {
-	tree.safe.Lock()
-	defer tree.safe.Unlock()
-	if tree.items == nil {
-		return true
-	}
-	tree.items = nil
-	tree.indexes = make(map[string]int)
-	return true
-}
-
-func (tree *stateTree) IndexOf(index int) (*QueueInfo, bool) {
-	tree.safe.Lock()
-	defer tree.safe.Unlock()
-	var size = len(tree.items)
-	if size > 0 && index <= size && index >= 1 {
-		return tree.items[index-1], true
-	}
-	return nil, false
-}
-
-func (tree *stateTree) Index(queue string) int {
-	var size = len(tree.items)
-	if size <= 0 || queue == "" {
-		return -1
-	}
-	tree.safe.Lock()
-	defer tree.safe.Unlock()
-	if index, ok := tree.indexes[queue]; ok && index <= size && index >= 1 {
-		return index
-	}
-	return -1
-}
-
-func (tree *stateTree) Get(queue string) (*QueueInfo, bool) {
-	tree.safe.Lock()
-	defer tree.safe.Unlock()
+	serv.safe.Lock()
+	defer serv.safe.Unlock()
 	var (
-		size      = len(tree.items)
-		index, ok = tree.indexes[queue]
+		queue = &QueueInfo{
+			Base: base,
+			Bind: bind,
+		}
+		name = queue.Queue()
 	)
-	if size > 0 && ok && index <= size {
-		return tree.items[index], true
+	if name == "" {
+		return false
 	}
-	return nil, false
-}
-
-func (tree *stateTree) delete(index int) bool {
-	var sizeOf = len(tree.items)
-	if sizeOf >= index && sizeOf != 0 {
-		defer tree.reIndex()
-		if index == 1 {
-			tree.items = tree.items[index:]
-			return true
+	if state, ok := serv.queues[Queue(name)]; ok {
+		if !state.Is(base.Status) {
+			return false
 		}
-		if index == sizeOf {
-			tree.items = tree.items[:index]
-			return true
+		if state != entity.QueueState(base.Status) {
+			treeContainer(serv.trees).Remove(state, name)
 		}
-		tree.items = append(tree.items[:index-1], tree.items[index:]...)
-		return true
 	}
-	return false
+	var (
+		res   bool
+		state entity.QueueState
+	)
+	if !state.Is(base.Status) {
+		return false
+	}
+	state = entity.QueueState(base.Status)
+	res = treeContainer(serv.trees).Register(state, queue)
+	if res {
+		serv.queues[Queue(name)] = state
+	}
+	return res
 }
 
-func (tree *stateTree) reIndex() {
-	for i, v := range tree.items {
-		if v == nil {
-			continue
+// Observe 开始前观察
+func (serv *serverDomainImpl) Observe() error {
+	return repo.GetPoolRepo().Add(serv.refresh)
+}
+
+// 刷新
+func (serv *serverDomainImpl) refresh() {
+	signal.Notify(serv.quit, syscall.SIGINT, syscall.SIGTERM)
+	for {
+
+		select {
+		case <-serv.refreshTicker.C:
+			serv.up()
+		case <-serv.quit:
+			serv.refreshTicker.Stop()
+			return
 		}
-		tree.indexes[v.Queue()] = i + 1
 	}
 }
 
-func (tree *stateTree) Exists(queue string) bool {
-	tree.safe.Lock()
-	defer tree.safe.Unlock()
-	if _, ok := tree.indexes[queue]; ok {
-		return ok
-	}
-	return false
+// 刷新队列
+func (serv *serverDomainImpl) up() {
+	// 发现新
+	serv.discover()
+	// 运行的
+	serv.run()
+	// 空闲
+	serv.idle()
+
 }
 
-func (tree *stateTree) ForEach(each func(i int, info *QueueInfo)) {
-	if each == nil {
-		return
-	}
-	for i, v := range tree.items {
-		each(i, v)
-	}
+func (serv *serverDomainImpl) discover() {
+
 }
 
-func (info *QueueInfo) Queue() string {
-	if info == nil {
-		return ""
-	}
-	if info.Base == nil {
-		return ""
-	}
-	return info.Base.Name
+func (serv *serverDomainImpl) idle() {
+
+}
+
+func (serv *serverDomainImpl) run() {
+
 }

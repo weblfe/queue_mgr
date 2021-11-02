@@ -27,6 +27,22 @@ func TestStateTree_Remove(t *testing.T) {
 	if tree.Len() != 3 {
 		t.Error("异常数据")
 	}
+	var c = tree.Cursor()
+	if v, ok := c.Prev(); ok || v != nil {
+		t.Error("游标异常")
+	}
+	for {
+		p, ok := c.Node()
+		if ok {
+			if p == nil {
+				t.Error("游标获取节点数据异常")
+			}
+		}
+		c, ok = c.Next()
+		if !ok {
+			break
+		}
+	}
 	tree.Remove("admin")
 	if tree.Len() != 2 {
 		t.Error("remove 异常数据")
