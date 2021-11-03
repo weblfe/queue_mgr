@@ -4,6 +4,7 @@ import (
 	"github.com/weblfe/queue_mgr/entity"
 	"github.com/weblfe/queue_mgr/models"
 	"github.com/weblfe/queue_mgr/repo"
+	"github.com/weblfe/queue_mgr/utils"
 	"os"
 	"os/signal"
 	"sync"
@@ -19,18 +20,11 @@ type (
 		safe          sync.RWMutex
 		refreshTicker *time.Ticker
 		quit          chan os.Signal
+
 		// 队列状态树
 		trees map[State]*stateTree
 		// 队列信息存储
 		queues map[Queue]entity.QueueState
-	}
-
-	// 队列状态数
-	stateTree struct {
-		safe    sync.RWMutex
-		items   []*QueueInfo
-		indexes map[string]int
-		state   entity.QueueState
 	}
 )
 
@@ -43,9 +37,17 @@ func (serv *serverDomainImpl) init() *serverDomainImpl {
 	serv.safe = sync.RWMutex{}
 	serv.quit = make(chan os.Signal)
 	serv.trees = make(map[State]*stateTree)
-	serv.refreshTicker = time.NewTicker(time.Second)
+	serv.refreshTicker = serv.getRefreshTicker()
 	serv.queues = make(map[Queue]entity.QueueState)
 	return serv
+}
+
+func (serv *serverDomainImpl) getRefreshTicker() *time.Ticker {
+	if serv.refreshTicker == nil {
+		var du = utils.GetEnvDuration(`SERVICE_REFRESH_DURATION`, time.Second)
+		serv.refreshTicker = time.NewTicker(du)
+	}
+	return serv.refreshTicker
 }
 
 func (serv *serverDomainImpl) Register(queue *models.QueueInfo) bool {
@@ -59,7 +61,7 @@ func (serv *serverDomainImpl) Register(queue *models.QueueInfo) bool {
 // Load 载入
 func (serv *serverDomainImpl) Load() *serverDomainImpl {
 
-		return  serv
+	return serv
 }
 
 func (serv *serverDomainImpl) add(base *models.QueueInfo, bind *models.QueryBindInfo) bool {
@@ -108,14 +110,14 @@ func (serv *serverDomainImpl) Observe() error {
 
 // 刷新
 func (serv *serverDomainImpl) refresh() {
+	var ticker = serv.getRefreshTicker()
 	signal.Notify(serv.quit, syscall.SIGINT, syscall.SIGTERM)
 	for {
-
 		select {
-		case <-serv.refreshTicker.C:
+		case <-ticker.C:
 			serv.up()
 		case <-serv.quit:
-			serv.refreshTicker.Stop()
+			ticker.Stop()
 			return
 		}
 	}
@@ -129,17 +131,22 @@ func (serv *serverDomainImpl) up() {
 	serv.run()
 	// 空闲
 	serv.idle()
-
 }
 
+// 发现新消费 队列
 func (serv *serverDomainImpl) discover() {
-
+	// 1. 发现数据库中的带启动的消费者
+	// 2. 投放就绪消费者
 }
 
+// 处理空闲队列
 func (serv *serverDomainImpl) idle() {
-
+	// 1. 发现长时间无消费的队列
+	// 2. 将队列状态发布的空闲状态树中
 }
 
+// 运行
 func (serv *serverDomainImpl) run() {
-
+	// 1. 接收 绪消费真的投递
+	// 2. 启动 就绪消费 携程
 }

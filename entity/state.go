@@ -5,12 +5,19 @@ type (
 )
 
 const (
-	Wait       QueueState = 0
-	Init       QueueState = 1
-	Running    QueueState = 2
-	Sleeping   QueueState = 3
-	Idle       QueueState = 4
-	Stop       QueueState = 5
+	// Wait 等待
+	Wait QueueState = 0
+	// Ready 就绪态
+	Ready QueueState = 1
+	// Running 执行态
+	Running QueueState = 2
+	// Sleeping 休眠|暂停 态
+	Sleeping QueueState = 3
+	// Idle 空闲态
+	Idle QueueState = 4
+	// Stop 停止状态
+	Stop QueueState = 5
+	// ReStarting 重启态
 	ReStarting QueueState = 6
 )
 
@@ -18,8 +25,8 @@ func (state QueueState) Describe() string {
 	switch state {
 	case Wait:
 		return "waiting for run"
-	case Init:
-		return "initial for run"
+	case Ready:
+		return "ready for run"
 	case Running:
 		return "queue running"
 	case Sleeping:
@@ -36,7 +43,7 @@ func (state QueueState) Describe() string {
 
 func (state QueueState) Check() bool {
 	switch state {
-	case Wait, Init, Running, Sleeping, Idle, Stop, ReStarting:
+	case Wait, Ready, Running, Sleeping, Idle, Stop, ReStarting:
 		return true
 	default:
 		return false
@@ -49,7 +56,7 @@ func (state QueueState) Int() uint {
 
 func (state QueueState) Is(s uint) bool {
 	switch s {
-	case Wait.Int(), Init.Int(), Running.Int(), Sleeping.Int(), Idle.Int(), Stop.Int(), ReStarting.Int():
+	case Wait.Int(), Ready.Int(), Running.Int(), Sleeping.Int(), Idle.Int(), Stop.Int(), ReStarting.Int():
 		return true
 	}
 	return false
@@ -59,8 +66,8 @@ func (state QueueState) String() string {
 	switch state {
 	case Wait:
 		return "wait"
-	case Init:
-		return "init"
+	case Ready:
+		return "ready"
 	case Running:
 		return "running"
 	case Sleeping:

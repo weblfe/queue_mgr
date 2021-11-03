@@ -4,9 +4,19 @@ import (
 	"github.com/weblfe/queue_mgr/entity"
 	"github.com/weblfe/queue_mgr/facede"
 	"github.com/weblfe/queue_mgr/models"
+	"sync"
 )
 
 type (
+
+	// 队列状态
+	stateTree struct {
+		safe    sync.RWMutex
+		items   []*QueueInfo
+		indexes map[string]int
+		state   entity.QueueState
+	}
+
 	treeContainer map[State]*stateTree
 
 	QueueInfo struct {
